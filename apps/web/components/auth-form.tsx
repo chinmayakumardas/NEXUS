@@ -16,6 +16,7 @@ import {
   getEmailValidationError,
   normalizeEmailInput,
 } from "@/lib/auth/email-validation"
+import { getAuthRedirectUrl } from "@/lib/auth/redirect-url"
 
 type Mode = "login" | "forgot" | "reset"
 type AuthViewMode = "login" | "reset"
@@ -86,7 +87,9 @@ export function AuthForm({ mode }: { mode: AuthViewMode }) {
           normalizedEmail,
           {
             captchaToken: captcha,
-            redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+            redirectTo: getAuthRedirectUrl(
+              "/auth/callback?next=/reset-password"
+            ),
           }
         )
         if (error) throw error
@@ -122,7 +125,7 @@ export function AuthForm({ mode }: { mode: AuthViewMode }) {
       const { error } = await createClient().auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/`,
+          redirectTo: getAuthRedirectUrl("/auth/callback?next=/"),
         },
       })
       if (error) throw error
@@ -571,6 +574,9 @@ function getAuthErrorMessage(cause: unknown, mode: Mode) {
     typeof details.code === "string" ? details.code.toLowerCase() : ""
   const status = typeof details.status === "number" ? details.status : 0
   const normalized = message.toLowerCase()
+  if (normalized.includes("next_public_site_url")) {
+    return "Set NEXT_PUBLIC_SITE_URL to the public Nexus URL for this deployment, then add that URL’s /auth/callback path to Supabase Auth → URL Configuration."
+  }
   if (
     normalized.includes("missing oauth secret") ||
     normalized.includes("unsupported provider")

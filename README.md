@@ -24,12 +24,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Environment variables
 
-| Variable                               | Required       | Purpose                                                 |
-| -------------------------------------- | -------------- | ------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Yes            | Supabase project URL                                    |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes, preferred | Supabase publishable client key                         |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Alternative    | Legacy anon key for older Supabase projects             |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | No             | Cloudflare Turnstile site key for auth abuse protection |
+| Variable                               | Required       | Purpose                                                  |
+| -------------------------------------- | -------------- | -------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Yes            | Supabase project URL                                     |
+| `NEXT_PUBLIC_SITE_URL`                 | Deployed app   | Canonical HTTPS origin for auth callbacks; blank locally |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes, preferred | Supabase publishable client key                          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Alternative    | Legacy anon key for older Supabase projects              |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | No             | Cloudflare Turnstile site key for auth abuse protection  |
 
 Use either the publishable key or the legacy anon key. These are public client keys and must be protected with RLS. Never put a Supabase service-role key or Google OAuth client secret in frontend code or a `NEXT_PUBLIC_` variable.
 
@@ -37,13 +38,15 @@ Use either the publishable key or the legacy anon key. These are public client k
 
 Nexus supports email/password sign-in and Google sign-in. Password recovery is available from the login screen and uses a Supabase email link; users choose a new password after returning to Nexus. There is no public signup page or OTP-entry reset flow.
 
-1. In Supabase Auth settings, disable **Allow new users to sign up** and provision authorized users through Supabase Auth.
-2. Configure the Supabase Site URL and add the local and deployed callback URLs to the Auth redirect allowlist:
+1. In each deployed app environment, set `NEXT_PUBLIC_SITE_URL` to its public HTTPS origin (for example `https://nexus.example.com`) and redeploy. Local development can leave it blank.
+2. In Supabase Auth settings, disable **Allow new users to sign up** and provision authorized users through Supabase Auth.
+3. Set Supabase's Site URL to the production app origin, then add each exact callback URL to its Auth redirect allowlist:
    - `http://localhost:3000/auth/callback`
    - `https://YOUR_DOMAIN/auth/callback`
-3. In **Authentication → Email Templates → Reset Password**, include the secure `{{ .ConfirmationURL }}` link. Configure SMTP for reliable production delivery and set a suitable recovery-link expiry.
-4. To enable Google sign-in, create a Google OAuth Web application. Set `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback` as its authorized redirect URI, then save the Google Client ID and Client Secret in the Google provider settings in Supabase. Keep the secret in Supabase only.
-5. If enabling CAPTCHA in Supabase Auth, configure Cloudflare Turnstile there and set the matching public site key in `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+     If these app callback URLs are not allowlisted, Supabase can ignore the `redirectTo` value and use its Site URL instead.
+4. In **Authentication → Email Templates → Reset Password**, include the secure `{{ .ConfirmationURL }}` link. Configure SMTP for reliable production delivery and set a suitable recovery-link expiry.
+5. To enable Google sign-in, create a Google OAuth Web application. Set `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback` as its authorized redirect URI, then save the Google Client ID and Client Secret in the Google provider settings in Supabase. Keep the secret in Supabase only.
+6. If enabling CAPTCHA in Supabase Auth, configure Cloudflare Turnstile there and set the matching public site key in `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 
 See [apps/web/AUTH_SETUP.md](apps/web/AUTH_SETUP.md) for detailed provider, email, CAPTCHA, redirect, and security configuration.
 
