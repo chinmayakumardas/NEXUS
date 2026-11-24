@@ -4,14 +4,14 @@ Nexus exposes sign-in and password recovery only. It does not provide public acc
 
 ## Local environment
 
-The Next.js project root is `apps/web`. Copy the root `.env.example` to `apps/web/.env.local`, set the Supabase project URL and publishable key, then restart `pnpm --filter web dev`. The workspace root `.env.local` is not loaded by this Next.js project. `.env.local` files are ignored by Git.
+The Next.js project root is `apps/web`. Copy the root `.env.example` to `apps/web/.env.local`, set the Supabase project URL and publishable key, then restart `pnpm --filter web dev`. The workspace root `.env.local` is not loaded by this Next.js project. `.env.local` files are ignored by Git. In each deployed environment, set `NEXT_PUBLIC_SITE_URL` to that deployment's public HTTPS origin (for example `https://nexus.example.com`); leave it blank for local development to use the current browser origin.
 
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is preferred; `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported for older projects. Both are public client keys protected by RLS. Never place a Supabase service-role key or Google OAuth client secret in Nexus or in any `NEXT_PUBLIC_` variable.
 
 ## Supabase Auth settings
 
 1. In **Authentication → Settings → General**, turn off **Allow new users to sign up** so accounts are admin-provisioned. In **Authentication → Sign In / Providers**, enable Email and Google. Create/confirm the corresponding users in Supabase Auth before they use Nexus.
-2. In **Authentication → URL Configuration**, set the production Site URL and allow `http://localhost:3000/auth/callback` plus the production callback URL. Add preview origins only when needed.
+2. In **Authentication → URL Configuration**, set Site URL to the production app origin, never localhost. Add the callback URL for each environment to Redirect URLs: `http://localhost:3000/auth/callback`, `https://YOUR_PRODUCTION_DOMAIN/auth/callback`, and preview callback URLs only if used. The redirect passed to Supabase must match an allowed URL; otherwise Supabase can fall back to Site URL, which can send users to localhost. Nexus uses `NEXT_PUBLIC_SITE_URL` to choose the deployment origin for OAuth and recovery callbacks.
 3. For production email delivery, configure a custom SMTP provider using a verified sending domain. Keep auth emails transactional and configure SPF/DKIM with the mail provider.
 4. In **Authentication → Sign In / Providers → Auth settings**, set the minimum password length to 12 or more. Enable leaked-password protection where available. The UI meter is a guide; Supabase Auth enforces the server-side password policy.
 5. Keep rate limits enabled and set recovery-link expiry to one hour or less.
